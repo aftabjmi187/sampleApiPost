@@ -27,7 +27,7 @@ app.get('/view', (req, res) => {
     }
 
     const formatted = allResponses.map(item => JSON.stringify(item, null, 2)).join('<hr>');
-    res.send(`<h3>📄 All Responses:</h3><pre>${formatted}</pre>`);
+    res.send(`<h3>📄 All Individual Responses:</h3><pre>${formatted}</pre>`);
 });
 
 // HTML UI form
@@ -72,11 +72,10 @@ app.get('/form', (req, res) => {
     `);
 });
 
-// POST endpoint – supports single or multiple objects
+// POST endpoint – supports single or multiple objects, responds with ONE object
 app.post('/dynamic-format', (req, res) => {
     const input = req.body;
     const inputArray = Array.isArray(input) ? input : [input];
-    const responseList = [];
 
     for (const obj of inputArray) {
         if (typeof obj !== 'object' || Array.isArray(obj) || obj === null) {
@@ -96,13 +95,10 @@ app.post('/dynamic-format', (req, res) => {
             responseItem[`field_${index}`] = val;
         });
 
-        responseList.push(responseItem);
-        allResponses.push({ response: [responseItem] });
+        allResponses.push(responseItem); // Save it
+        console.log("✅ POST Response:", JSON.stringify(responseItem, null, 2));
+        return res.status(200).json(responseItem); // Respond with one object only
     }
-
-    const finalResponse = { response: responseList };
-    console.log("✅ POST Response:", JSON.stringify(finalResponse, null, 2));
-    res.status(200).json(finalResponse);
 });
 
 // Start server
