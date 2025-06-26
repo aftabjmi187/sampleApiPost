@@ -2,9 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const app = express();
-const port = process.env.PORT || 3000; // Render needs dynamic port
+const port = process.env.PORT || 3000;
 
-let requestCounter = 0;
 let allResponses = [];
 
 app.use(bodyParser.json());
@@ -27,7 +26,7 @@ app.get('/view', (req, res) => {
     }
 
     const formatted = allResponses.map(item => JSON.stringify(item, null, 2)).join('<hr>');
-    res.send(`<h3>📄 All Individual Responses:</h3><pre>${formatted}</pre>`);
+    res.send(`<h3>📄 All Submitted Data:</h3><pre>${formatted}</pre>`);
 });
 
 // HTML UI form
@@ -72,33 +71,24 @@ app.get('/form', (req, res) => {
     `);
 });
 
-// POST endpoint – supports single or multiple objects, responds with ONE object
+// POST endpoint – returns input as-is
 app.post('/dynamic-format', (req, res) => {
     const input = req.body;
-    const inputArray = Array.isArray(input) ? input : [input];
 
-    for (const obj of inputArray) {
-        if (typeof obj !== 'object' || Array.isArray(obj) || obj === null) {
-            const errorResponse = { error: "Each item must be a valid JSON object." };
-            console.log("❌ Error:", errorResponse);
-            return res.status(400).json(errorResponse);
+    if (Array.isArray(input)) {
+        if (input.length === 0 || typeof input[0] !== 'object' || input[0] === null) {
+            return res.status(400).json({ error: "Invalid JSON object or empty array." });
         }
-
-        requestCounter++;
-
-        const responseItem = {
-            id: requestCounter,
-            status: "Success"
-        };
-
-        Object.values(obj).forEach((val, index) => {
-            responseItem[`field_${index}`] = val;
-        });
-
-        allResponses.push(responseItem); // Save it
-        console.log("✅ POST Response:", JSON.stringify(responseItem, null, 2));
-        return res.status(200).json(responseItem); // Respond with one object only
+        allResponses.push(input[0]);
+        return res.status(200).json(input[0]); // Return first object only
     }
+
+    if (typeof input !== 'object' || input === null) {
+        return res.status(400).json({ error: "Invalid JSON object." });
+    }
+
+    allResponses.push(input); // Save original object
+    return res.status(200).json(input); // Return original object
 });
 
 // Start server
